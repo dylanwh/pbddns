@@ -1,0 +1,25 @@
+[package]
+name = "pbddns"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-trait = "0.1.71"
+atty = "0.2.14"
+axum = "0.6.18"
+cidr-utils = "0.5.10"
+clap = { version = "4.3.11", features = ["derive"] }
+dotenv = { version = "0.15.0" }
+eyre = "0.6.8"
+interfaces = "0.0.9"
+reqwest = { version = "0.11.18", features = ["serde_json", "json"] }
+serde = { version = "1.0.167", features = ["derive"] }
+serde-aux = "4.2.0"
+serde_json = "1.0.100"
+strum = { version = "0.25.0", features = ["derive"] }
+strum_macros = "0.25.1"
+tokio = { version = "1.29.1", features = ["full"] }
+tracing = { version = "0.1.37", features = ["log", "async-await"] }
+tracing-subscriber = "0.3.17"
