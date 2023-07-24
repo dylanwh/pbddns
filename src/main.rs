@@ -36,10 +36,11 @@ impl AppState {
     }
 }
 
-async fn update_loop(config: Arc<Config>, client: Client, dns_cache: Arc<Mutex<DNSCache>>) {
+async fn update_loop(config: Arc<Config>, client: Arc<Client>, dns_cache: Arc<Mutex<DNSCache>>) {
     let mut interval = time::interval(Duration::from_secs(60 * 60));
 
     loop {
+        let domain = &config.domain;
         for (name, ips) in config.domains() {
             let mut dns_cache = dns_cache.lock().await;
             let cached_ips = dns_cache.entry(name.clone()).or_default();
@@ -48,18 +49,19 @@ async fn update_loop(config: Arc<Config>, client: Client, dns_cache: Arc<Mutex<D
                 continue;
             }
             *cached_ips = ips.clone();
-            update_dns(&client, &config.domain, &name, &ips).await;
+            for ip in ips {
+                tokio::spawn( update_dns(client.clone(), domain.clone(), name.clone(), ip) );
+            }
         }
         interval.tick().await;
     }
 }
 
-async fn update_dns(client: &Client, domain: &str, name: &str, ips: &[IpAddr]) {
-    for ip in ips {
+async fn update_dns(client: Arc<Client>, domain: String, name: String, ip: IpAddr) {
         tracing::info!("updating {} to {}", name, ip);
         let params = porkbun::Params {
-            domain: domain.to_string(),
-            name: name.to_string(),
+            domain,
+            name,
             record_type: match ip {
                 IpAddr::V4(_) => A,
                 IpAddr::V6(_) => porkbun::RecordType::AAAA,
@@ -68,10 +70,9 @@ async fn update_dns(client: &Client, domain: &str, name: &str, ips: &[IpAddr]) {
             ttl: Some("600".to_string()),
             prio: None,
         };
-        if let Ok(id) = porkbun::create_or_edit(client, &params).await {
-            tracing::info!("{name} updated to {ip} with id {id}");
+        if let Ok(id) = porkbun::create_or_edit(&client, &params).await {
+            tracing::info!("Updated record with id {id}");
         }
-    }
 }
 
 #[tokio::main]
@@ -85,7 +86,7 @@ async fn main() -> Result<()> {
         )
         .init();
     let config = Arc::new(Config::parse());
-    let client = reqwest::Client::new();
+    let client = Arc::new(reqwest::Client::new());
     let state = AppState::new();
 
     if config.ping {
