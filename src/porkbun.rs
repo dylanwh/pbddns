@@ -195,17 +195,18 @@ async fn edit(client: &Client, record: Record) -> Result<()> {
     Ok(())
 }
 
-pub async fn create_or_edit(client: &Client, params: &Params) -> Result<String> {
+pub async fn create_or_edit(client: &Client, params: &Params) -> Result<(String, bool)> {
     let mut records = retrieve_by_name_type(client, params).await?;
     if records.is_empty() {
-        create(client, params).await
+        Ok((create(client, params).await?, true))
     } else {
         let record = records.remove(0);
         let id = record.id.clone();
         if record.is_modified(params) {
             edit(client, record.modify(params)?).await?;
+            return Ok((id, true));
         }
-        Ok(id)
+        Ok((id, false))
     }
 }
 

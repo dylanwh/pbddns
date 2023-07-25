@@ -45,12 +45,12 @@ async fn update_loop(config: Arc<Config>, client: Arc<Client>, dns_cache: Arc<Mu
             let mut dns_cache = dns_cache.lock().await;
             let cached_ips = dns_cache.entry(name.clone()).or_default();
             if cached_ips == &ips {
-                tracing::info!("{name} has not changed");
+                tracing::info!("{name} has not changed ({ips:?})");
                 continue;
             }
             *cached_ips = ips.clone();
             for ip in ips {
-                tokio::spawn( update_dns(client.clone(), domain.clone(), name.clone(), ip) );
+                tokio::spawn(update_dns(client.clone(), domain.clone(), name.clone(), ip));
             }
         }
         interval.tick().await;
@@ -58,21 +58,28 @@ async fn update_loop(config: Arc<Config>, client: Arc<Client>, dns_cache: Arc<Mu
 }
 
 async fn update_dns(client: Arc<Client>, domain: String, name: String, ip: IpAddr) {
-        tracing::info!("updating {} to {}", name, ip);
-        let params = porkbun::Params {
-            domain,
-            name,
-            record_type: match ip {
-                IpAddr::V4(_) => A,
-                IpAddr::V6(_) => porkbun::RecordType::AAAA,
-            },
-            content: ip.to_string(),
-            ttl: Some("600".to_string()),
-            prio: None,
-        };
-        if let Ok(id) = porkbun::create_or_edit(&client, &params).await {
-            tracing::info!("Updated record with id {id}");
+    tracing::info!("checking {} to {}", name, ip);
+    let params = porkbun::Params {
+        domain,
+        name,
+        record_type: match ip {
+            IpAddr::V4(_) => A,
+            IpAddr::V6(_) => porkbun::RecordType::AAAA,
+        },
+        content: ip.to_string(),
+        ttl: Some("600".to_string()),
+        prio: None,
+    };
+    let r = porkbun::create_or_edit(&client, &params).await;
+    match r {
+        Ok((id, true)) => {
+            tracing::info!("Record {id} updated");
         }
+        Ok((id, false)) => {
+            tracing::debug!("Record {id} already up to date");
+        }
+        Err(err) => tracing::error!("Failed to update record: {err}"),
+    }
 }
 
 #[tokio::main]
@@ -97,9 +104,7 @@ async fn main() -> Result<()> {
 
     tokio::spawn(update_loop(config.clone(), client, state.dns_cache.clone()));
 
-    let router = Router::new()
-        .route("/", get(status))
-        .with_state(state);
+    let router = Router::new().route("/", get(status)).with_state(state);
 
     tracing::debug!("listening on {}", &config.listen);
     axum::Server::bind(&config.listen)
