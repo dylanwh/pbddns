@@ -1,3 +1,7 @@
+## 0.2.2
+
+Remove unsupported platforms
+
 ## 0.2.1
 
 Upgrade some dependencies (including ring) to try to fix some build failures.

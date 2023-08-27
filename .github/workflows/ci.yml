@@ -47,86 +47,86 @@ jobs:
             target: arm-unknown-linux-musleabi
             bin: pbddns
             name: pbddns-Linux-arm-musl.tar.gz
-          - os_name: Linux-i686
-            os: ubuntu-20.04
-            target: i686-unknown-linux-musl
-            bin: pbddns
-            name: pbddns-Linux-i686-musl.tar.gz
-            skip_tests: true
-          - os_name: Linux-mips
-            os: ubuntu-20.04
-            target: mips-unknown-linux-musl
-            bin: pbddns
-            name: pbddns-Linux-mips.tar.gz
-          - os_name: Linux-mipsel
-            os: ubuntu-20.04
-            target: mipsel-unknown-linux-musl
-            bin: pbddns
-            name: pbddns-Linux-mipsel.tar.gz
-          - os_name: Linux-mips64
-            os: ubuntu-20.04
-            target: mips64-unknown-linux-muslabi64
-            bin: pbddns
-            name: pbddns-Linux-mips64.tar.gz
-            skip_tests: true
-          - os_name: Linux-mips64el
-            os: ubuntu-20.04
-            target: mips64el-unknown-linux-muslabi64
-            bin: pbddns
-            name: pbddns-Linux-mips64el.tar.gz
-            skip_tests: true
-          - os_name: Linux-powerpc
-            os: ubuntu-20.04
-            target: powerpc-unknown-linux-gnu
-            bin: pbddns
-            name: pbddns-Linux-powerpc-gnu.tar.gz
-            skip_tests: true
-          - os_name: Linux-powerpc64
-            os: ubuntu-20.04
-            target: powerpc64-unknown-linux-gnu
-            bin: pbddns
-            name: pbddns-Linux-powerpc64-gnu.tar.gz
-            skip_tests: true
-          - os_name: Linux-powerpc64le
-            os: ubuntu-20.04
-            target: powerpc64le-unknown-linux-gnu
-            bin: pbddns
-            name: pbddns-Linux-powerpc64le.tar.gz
-            skip_tests: true
-          - os_name: Linux-riscv64
-            os: ubuntu-20.04
-            target: riscv64gc-unknown-linux-gnu
-            bin: pbddns
-            name: pbddns-Linux-riscv64gc-gnu.tar.gz
-          - os_name: Linux-s390x
-            os: ubuntu-20.04
-            target: s390x-unknown-linux-gnu
-            bin: pbddns
-            name: pbddns-Linux-s390x-gnu.tar.gz
-            skip_tests: true
+          # - os_name: Linux-i686
+          #   os: ubuntu-20.04
+          #   target: i686-unknown-linux-musl
+          #   bin: pbddns
+          #   name: pbddns-Linux-i686-musl.tar.gz
+          #   skip_tests: true
+          # - os_name: Linux-mips
+          #   os: ubuntu-20.04
+          #   target: mips-unknown-linux-musl
+          #   bin: pbddns
+          #   name: pbddns-Linux-mips.tar.gz
+          # - os_name: Linux-mipsel
+          #   os: ubuntu-20.04
+          #   target: mipsel-unknown-linux-musl
+          #   bin: pbddns
+          #   name: pbddns-Linux-mipsel.tar.gz
+          # - os_name: Linux-mips64
+          #   os: ubuntu-20.04
+          #   target: mips64-unknown-linux-muslabi64
+          #   bin: pbddns
+          #   name: pbddns-Linux-mips64.tar.gz
+          #   skip_tests: true
+          # - os_name: Linux-mips64el
+          #   os: ubuntu-20.04
+          #   target: mips64el-unknown-linux-muslabi64
+          #   bin: pbddns
+          #   name: pbddns-Linux-mips64el.tar.gz
+          #   skip_tests: true
+          # - os_name: Linux-powerpc
+          #   os: ubuntu-20.04
+          #   target: powerpc-unknown-linux-gnu
+          #   bin: pbddns
+          #   name: pbddns-Linux-powerpc-gnu.tar.gz
+          #   skip_tests: true
+          # - os_name: Linux-powerpc64
+          #   os: ubuntu-20.04
+          #   target: powerpc64-unknown-linux-gnu
+          #   bin: pbddns
+          #   name: pbddns-Linux-powerpc64-gnu.tar.gz
+          #   skip_tests: true
+          # - os_name: Linux-powerpc64le
+          #   os: ubuntu-20.04
+          #   target: powerpc64le-unknown-linux-gnu
+          #   bin: pbddns
+          #   name: pbddns-Linux-powerpc64le.tar.gz
+          #   skip_tests: true
+          # - os_name: Linux-riscv64
+          #   os: ubuntu-20.04
+          #   target: riscv64gc-unknown-linux-gnu
+          #   bin: pbddns
+          #   name: pbddns-Linux-riscv64gc-gnu.tar.gz
+          # - os_name: Linux-s390x
+          #   os: ubuntu-20.04
+          #   target: s390x-unknown-linux-gnu
+          #   bin: pbddns
+          #   name: pbddns-Linux-s390x-gnu.tar.gz
+          #   skip_tests: true
           - os_name: NetBSD-x86_64
             os: ubuntu-20.04
             target: x86_64-unknown-netbsd
             bin: pbddns
             name: pbddns-NetBSD-x86_64.tar.gz
             skip_tests: true
-          - os_name: Windows-aarch64
-            os: windows-latest
-            target: aarch64-pc-windows-msvc
-            bin: pbddns.exe
-            name: pbddns-Windows-aarch64.zip
-            skip_tests: true
-          - os_name: Windows-i686
-            os: windows-latest
-            target: i686-pc-windows-msvc
-            bin: pbddns.exe
-            name: pbddns-Windows-i686.zip
-            skip_tests: true
-          - os_name: Windows-x86_64
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
-            bin: pbddns.exe
-            name: pbddns-Windows-x86_64.zip
+          # - os_name: Windows-aarch64
+          #   os: windows-latest
+          #   target: aarch64-pc-windows-msvc
+          #   bin: pbddns.exe
+          #   name: pbddns-Windows-aarch64.zip
+          #   skip_tests: true
+          # - os_name: Windows-i686
+          #   os: windows-latest
+          #   target: i686-pc-windows-msvc
+          #   bin: pbddns.exe
+          #   name: pbddns-Windows-i686.zip
+          #   skip_tests: true
+          # - os_name: Windows-x86_64
+          #   os: windows-latest
+          #   target: x86_64-pc-windows-msvc
+          #   bin: pbddns.exe
+          #   name: pbddns-Windows-x86_64.zip
           - os_name: macOS-x86_64
             os: macOS-latest
             target: x86_64-apple-darwin
