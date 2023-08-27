@@ -1,6 +1,6 @@
 [package]
 name = "pbddns"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -13,8 +13,9 @@ cidr-utils = "0.5.10"
 clap = { version = "4.3.11", features = ["derive"] }
 dotenv = { version = "0.15.0" }
 eyre = "0.6.8"
+futures = "0.3.28"
 interfaces = "0.0.9"
-reqwest = { version = "0.11.18", features = ["serde_json", "json"] }
+reqwest = { version = "0.11.18", features = ["serde_json", "json", "tokio-rustls", "rustls", "hyper-rustls", "rustls-tls"], default-features = false }
 serde = { version = "1.0.167", features = ["derive"] }
 serde-aux = "4.2.0"
 serde_json = "1.0.100"
@@ -28,3 +29,7 @@ tracing-subscriber = "0.3.17"
 lto = true
 codegen-units = 1
 strip = true
+
+[build-dependencies]
+clap = "4.3.11"
+clap_mangen = "0.2.13"

@@ -20,6 +20,7 @@ use tokio::{sync::Mutex, time};
 use tracing_subscriber::{
     filter, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt, Layer,
 };
+use futures::future::join_all;
 
 type DNSCache = HashMap<String, Vec<IpAddr>>;
 
@@ -49,12 +50,29 @@ async fn update_loop(config: Arc<Config>, client: Arc<Client>, dns_cache: Arc<Mu
                 continue;
             }
             *cached_ips = ips.clone();
+            drop(dns_cache);
             for ip in ips {
                 tokio::spawn(update_dns(client.clone(), domain.clone(), name.clone(), ip));
             }
         }
         interval.tick().await;
     }
+}
+
+async fn update_once(config: Arc<Config>, client: Arc<Client>) {
+    let mut handles = vec![];
+    for (name, ips) in config.domains() {
+        for ip in ips {
+            let j = tokio::spawn(update_dns(
+                client.clone(),
+                config.domain.clone(),
+                name.clone(),
+                ip,
+            ));
+            handles.push(j);
+        }
+    }
+    join_all(handles).await;
 }
 
 async fn update_dns(client: Arc<Client>, domain: String, name: String, ip: IpAddr) {
@@ -99,6 +117,11 @@ async fn main() -> Result<()> {
     if config.ping {
         let ip = porkbun::ping(&client).await?;
         println!("Porkbun says your IP is {ip}");
+        return Ok(());
+    }
+
+    if config.once {
+        update_once(config.clone(), client.clone()).await;
         return Ok(());
     }
 

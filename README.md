@@ -31,7 +31,8 @@ Configuration of `pbddns` is achieved by command-line arguments.
 * `-d, --domain <String>`: The domain to update on Porkbun.
 * `-i, --interface <InterfaceSubdomain>`: Mapping of network interface to subdomain. For
 * example, `eth0=sub` or just `eth0` to use the root domain.
-* `--ping`: Option to ping the Porkbun API to verify API credentials.
+* `--ping`: Ping the Porkbun API to verify API credentials.
+* `--once`: Only check interfaces and update dns once and exit
 
 The `InterfaceSubdomain` structure is used for mapping network interfaces to subdomains.
 It takes a string in the format `interface=subdomain.` If no subdomain is provided, the

@@ -25,6 +25,10 @@ pub struct Config {
     /// Ping the porkbun API to verify credentials
     #[arg(long)]
     pub ping: bool,
+
+    /// Only update the DNS once and exit
+    #[arg(long)]
+    pub once: bool,
 }
 
 impl Config {
