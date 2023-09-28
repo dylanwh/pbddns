@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.71"
-atty = "0.2.14"
 axum = "0.6.18"
 cidr-utils = "0.5.10"
 clap = { version = "4.3.11", features = ["derive"] }

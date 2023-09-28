@@ -20,7 +20,7 @@ use eyre::Result;
 use futures::future::join_all;
 use porkbun::RecordType::A;
 use reqwest::{Client, StatusCode};
-use std::{collections::HashMap, net::IpAddr, sync::Arc, time::Duration};
+use std::{collections::HashMap, net::IpAddr, sync::Arc, time::Duration, io::IsTerminal};
 use tokio::{sync::Mutex, time};
 use tracing_subscriber::{
     filter, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt, Layer,
@@ -115,7 +115,7 @@ async fn main() -> Result<()> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::fmt::layer()
-                .with_ansi(atty::is(atty::Stream::Stdout))
+                .with_ansi(std::io::stdout().is_terminal())
                 .with_filter(filter::LevelFilter::INFO),
         )
         .init();
