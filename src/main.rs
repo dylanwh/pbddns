@@ -154,6 +154,7 @@ async fn refresh(State(state): State<AppState>) -> Result<Json<DNSCache>, Status
     let client = state.client;
     let dns_cache = state.dns_cache;
 
+    tracing::info!("refreshing");
     update_once(config, client, Some(dns_cache.clone())).await;
 
     let dns_cache = dns_cache.lock().await;
