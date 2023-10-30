@@ -134,6 +134,10 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
+    if let Some(write_pid) = &config.write_pid {
+        std::fs::write(write_pid, std::process::id().to_string())?;
+    }
+
     tokio::spawn(update_loop(config.clone(), client, state.dns_cache.clone()));
 
     let router = Router::new()

@@ -1,6 +1,6 @@
 use std::{
     net::{IpAddr, SocketAddr},
-    str::FromStr,
+    str::FromStr, path::PathBuf,
 };
 
 use cidr_utils::cidr::IpCidr;
@@ -29,6 +29,10 @@ pub struct Config {
     /// Only update the DNS once and exit
     #[arg(long)]
     pub once: bool,
+
+    #[arg(long)]
+    /// Write pid to file
+    pub write_pid: Option<PathBuf>,
 }
 
 impl Config {

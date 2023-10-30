@@ -1,3 +1,11 @@
+## 0.2.4
+
+Added --write-pid and an example freebsd rc.d script.
+
+## 0.2.3
+
+Added /refresh endpoint to force a refresh of the cache.
+
 ## 0.2.2
 
 Remove unsupported platforms

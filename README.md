@@ -33,6 +33,7 @@ Configuration of `pbddns` is achieved by command-line arguments.
 * example, `eth0=sub` or just `eth0` to use the root domain.
 * `--ping`: Ping the Porkbun API to verify API credentials.
 * `--once`: Only check interfaces and update dns once and exit
+* `--write-pid <file>`: Write the process ID to the specified path. Useful for running pbddns as a service.
 
 The `InterfaceSubdomain` structure is used for mapping network interfaces to subdomains.
 It takes a string in the format `interface=subdomain.` If no subdomain is provided, the
