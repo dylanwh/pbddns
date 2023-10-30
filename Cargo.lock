@@ -905,7 +905,7 @@ dependencies = [
 
 [[package]]
 name = "pbddns"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "async-trait",
  "axum",

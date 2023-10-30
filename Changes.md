@@ -1,3 +1,7 @@
+## 0.2.5
+
+Something broke for netbsd, so I'm removing it from the supported platforms.
+
 ## 0.2.4
 
 Added --write-pid and an example freebsd rc.d script.
