@@ -5,12 +5,14 @@
     clippy::unwrap_used,
     clippy::expect_used
 )]
+#![allow(clippy::redundant_pub_crate)]
 
 mod config;
 mod porkbun;
 
 use axum::{
     extract::State,
+    http::StatusCode,
     routing::{get, post},
     Json, Router,
 };
@@ -19,9 +21,10 @@ use config::Config;
 use eyre::Result;
 use futures::future::join_all;
 use porkbun::RecordType::A;
-use reqwest::{Client, StatusCode};
-use std::{collections::HashMap, net::IpAddr, sync::Arc, time::Duration, io::IsTerminal};
-use tokio::{sync::Mutex, time};
+use reqwest::Client;
+use std::{collections::HashMap, io::IsTerminal, net::IpAddr, sync::Arc, time::Duration};
+use tokio::{net::TcpListener, signal, sync::Mutex, time};
+use tokio_util::{sync::CancellationToken, task::TaskTracker};
 use tracing_subscriber::{
     filter, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt, Layer,
 };
@@ -45,20 +48,24 @@ impl AppState {
     }
 }
 
-async fn update_loop(config: Arc<Config>, client: Client, dns_cache: Arc<Mutex<DNSCache>>) {
+async fn update_loop(
+    shutdown: CancellationToken,
+    config: Arc<Config>,
+    client: Client,
+    dns_cache: Arc<Mutex<DNSCache>>,
+) {
     let mut interval = time::interval(Duration::from_secs(60 * 60));
 
     loop {
         update_once(config.clone(), client.clone(), Some(dns_cache.clone())).await;
-        interval.tick().await;
+        tokio::select! {
+            () = shutdown.cancelled() => break,
+            _ = interval.tick() => continue,
+        }
     }
 }
 
-async fn update_once(
-    config: Arc<Config>,
-    client: Client,
-    dns_cache: Option<Arc<Mutex<DNSCache>>>,
-) {
+async fn update_once(config: Arc<Config>, client: Client, dns_cache: Option<Arc<Mutex<DNSCache>>>) {
     let mut handles = vec![];
     for (name, ips) in config.domains() {
         if let Some(ref dns_cache) = dns_cache {
@@ -137,8 +144,15 @@ async fn main() -> Result<()> {
     if let Some(write_pid) = &config.write_pid {
         std::fs::write(write_pid, std::process::id().to_string())?;
     }
+    let shutdown = CancellationToken::new();
+    let tracker = TaskTracker::new();
 
-    tokio::spawn(update_loop(config.clone(), client, state.dns_cache.clone()));
+    tracker.spawn(update_loop(
+        shutdown.clone(),
+        config.clone(),
+        client,
+        state.dns_cache.clone(),
+    ));
 
     let router = Router::new()
         .route("/", get(status))
@@ -146,9 +160,20 @@ async fn main() -> Result<()> {
         .with_state(state);
 
     tracing::debug!("listening on {}", &config.listen);
-    axum::Server::bind(&config.listen)
-        .serve(router.into_make_service())
-        .await?;
+    let listener = TcpListener::bind(&config.listen).await?;
+    let serve_shutdown = shutdown.clone();
+    tracker.spawn(async move {
+        axum::serve(listener, router)
+            .with_graceful_shutdown(async move { serve_shutdown.cancelled().await })
+            .await
+            .unwrap_or_else(|e| {
+                tracing::error!("server error: {e}");
+            });
+    });
+    tracker.close();
+    shutdown_signal().await;
+    shutdown.cancel();
+    tracker.wait().await;
 
     Ok(())
 }
@@ -169,4 +194,30 @@ async fn status(State(state): State<AppState>) -> Result<Json<DNSCache>, StatusC
     let dns_cache = state.dns_cache.lock().await;
 
     Ok(Json(dns_cache.clone()))
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        #[allow(clippy::expect_used)]
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        #[allow(clippy::expect_used)]
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        () = ctrl_c => {},
+        () = terminate => {},
+    }
 }

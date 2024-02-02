@@ -1,3 +1,9 @@
+## 0.2.6
+
+- Removed unneeded Arc<> around reqwest client
+- Supports graceful shutdown
+- Upgraded axum and other dependencies
+
 ## 0.2.5
 
 Something broke for netbsd, so I'm removing it from the supported platforms.
