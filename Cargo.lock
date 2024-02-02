@@ -1029,7 +1029,6 @@ dependencies = [
 name = "pbddns"
 version = "0.2.6"
 dependencies = [
- "async-trait",
  "axum",
  "cidr-utils",
  "clap",
