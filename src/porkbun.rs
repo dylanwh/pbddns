@@ -31,6 +31,7 @@ struct Record {
     ttl: String,
 
     #[serde(rename = "type")]
+    #[allow(clippy::struct_field_names)]
     record_type: RecordType,
 
     #[serde(skip)]

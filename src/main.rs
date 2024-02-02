@@ -32,11 +32,11 @@ type DNSCache = HashMap<String, Vec<IpAddr>>;
 struct AppState {
     dns_cache: Arc<Mutex<DNSCache>>,
     config: Arc<Config>,
-    client: Arc<Client>,
+    client: Client,
 }
 
 impl AppState {
-    fn new(config: Arc<Config>, client: Arc<Client>) -> Self {
+    fn new(config: Arc<Config>, client: Client) -> Self {
         Self {
             dns_cache: Arc::new(Mutex::new(HashMap::new())),
             config,
@@ -45,7 +45,7 @@ impl AppState {
     }
 }
 
-async fn update_loop(config: Arc<Config>, client: Arc<Client>, dns_cache: Arc<Mutex<DNSCache>>) {
+async fn update_loop(config: Arc<Config>, client: Client, dns_cache: Arc<Mutex<DNSCache>>) {
     let mut interval = time::interval(Duration::from_secs(60 * 60));
 
     loop {
@@ -56,7 +56,7 @@ async fn update_loop(config: Arc<Config>, client: Arc<Client>, dns_cache: Arc<Mu
 
 async fn update_once(
     config: Arc<Config>,
-    client: Arc<Client>,
+    client: Client,
     dns_cache: Option<Arc<Mutex<DNSCache>>>,
 ) {
     let mut handles = vec![];
@@ -84,7 +84,7 @@ async fn update_once(
     join_all(handles).await;
 }
 
-async fn update_dns(client: Arc<Client>, domain: String, name: String, ip: IpAddr) {
+async fn update_dns(client: Client, domain: String, name: String, ip: IpAddr) {
     tracing::info!("checking {} to {}", name, ip);
     let params = porkbun::Params {
         domain,
@@ -120,7 +120,7 @@ async fn main() -> Result<()> {
         )
         .init();
     let config = Arc::new(Config::parse());
-    let client = Arc::new(reqwest::Client::new());
+    let client = reqwest::Client::new();
     let state = AppState::new(config.clone(), client.clone());
 
     if config.ping {
