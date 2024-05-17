@@ -1,6 +1,9 @@
 # pbddns - A simple Dynamic DNS (DDNS) client for Porkbun
 
-`pbddns` is a Rust-based DDNS client intended to be run from a router, interfacing with Porkbun’s DNS service. This tool is designed to handle cases where your network’s public IP address changes frequently and needs to be updated in your Porkbun domain’s DNS records.
+`pbddns` is a Rust-based DDNS client intended to be run from a router,
+interfacing with Porkbun's DNS service. This tool is designed to handle cases
+where your network's public IP address changes frequently and needs to be
+updated in your Porkbun domain's DNS records.
 
 ## Features
 * Automatically detects public IP addresses from network interfaces
@@ -45,8 +48,8 @@ You can specify these in a .env file in the directory you run pbddns from
 or provide them in one of the conventional ways for your operating system.
 
 ```bash
-export PORKBUN_API_KEY="your-API-key" # porkbun calls this the “apikey”.
-export PORKBUN_SECRET_KEY="your-secret-key" # porkbun calls this the “secretapikey”
+export PORKBUN_API_KEY="your-API-key" # porkbun calls this the "apikey".
+export PORKBUN_SECRET_KEY="your-secret-key" # porkbun calls this the "secretapikey"
 ```
 
 ## Usage
@@ -58,9 +61,9 @@ To run pbddns, use the following command (example):
 
 This command will update the `yourdomain.com` record on Porkbun to reflect the
 public IP address of the `eth0` interface. The `--ping` option verifies the credentials
-with Porkbun’s API.
+with Porkbun's API.
 
-If you have multiple interfaces, you can specify them with multiple `-i’ arguments:
+If you have multiple interfaces, you can specify them with multiple `-i' arguments:
 
 ```bash
 ./pbddns -d yourdomain.com -i eth0=first -i eth1=second --ping

@@ -1,4 +1,4 @@
-use eyre::{eyre, Result};
+use eyre::{eyre, Context, Result};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -86,11 +86,13 @@ impl Record {
 const PORKBUN_API: &str = "https://porkbun.com/api/json/v3";
 
 fn api_key() -> Result<String> {
-    Ok(std::env::var("PORKBUN_API_KEY")?)
+    std::env::var("PORKBUN_API_KEY")
+        .wrap_err("PORKBUN_API_KEY env var not set")
 }
 
 fn secret_key() -> Result<String> {
-    Ok(std::env::var("PORKBUN_SECRET_KEY")?)
+    std::env::var("PORKBUN_SECRET_KEY")
+        .wrap_err("PORKBUN_SECRET_KEY env var not set")
 }
 
 pub async fn ping(client: &Client) -> Result<IpAddr> {
