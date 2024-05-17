@@ -1027,7 +1027,7 @@ dependencies = [
 
 [[package]]
 name = "pbddns"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "axum",
  "cidr-utils",

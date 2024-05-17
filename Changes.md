@@ -1,3 +1,7 @@
+## 0.2.7
+
+- Include env variable name in error message when it's not found
+
 ## 0.2.6
 
 - Removed unneeded Arc<> around reqwest client
