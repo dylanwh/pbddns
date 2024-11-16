@@ -83,7 +83,7 @@ impl Record {
     }
 }
 
-const PORKBUN_API: &str = "https://porkbun.com/api/json/v3";
+const PORKBUN_API: &str = "https://api.porkbun.com/api/json/v3";
 
 fn api_key() -> Result<String> {
     std::env::var("PORKBUN_API_KEY")
