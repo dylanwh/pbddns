@@ -30,6 +30,10 @@ pub struct Config {
     #[arg(long)]
     pub once: bool,
 
+    /// Test the retrieval of records
+    #[arg(long)]
+    pub test: Option<String>,
+
     #[arg(long)]
     /// Write pid to file
     pub write_pid: Option<PathBuf>,
@@ -88,11 +92,11 @@ fn is_public(address: &Address) -> Option<IpAddr> {
     let ip = sockaddr.ip();
     let Ok(global_unicast) = IpCidr::from_str("2000::/3") else { return None };
 
-    match ip {
+    match &ip {
         IpAddr::V4(ip4) if !ip4.is_private() && !ip4.is_link_local() && !ip4.is_loopback() => {
             Some(ip)
         }
-        IpAddr::V6(_) if global_unicast.contains(ip) => Some(ip),
+        IpAddr::V6(_) if global_unicast.contains(&ip) => Some(ip),
         _ => None,
     }
 }

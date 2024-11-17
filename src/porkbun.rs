@@ -23,19 +23,19 @@ pub enum RecordType {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
-struct Record {
-    content: String,
-    id: String,
-    name: String,
-    prio: String,
-    ttl: String,
+pub struct Record {
+    pub content: String,
+    pub id: String,
+    pub name: String,
+    pub prio: String,
+    pub ttl: String,
 
     #[serde(rename = "type")]
     #[allow(clippy::struct_field_names)]
-    record_type: RecordType,
+    pub record_type: RecordType,
 
     #[serde(skip)]
-    domain: Option<String>,
+    pub domain: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
@@ -86,13 +86,11 @@ impl Record {
 const PORKBUN_API: &str = "https://api.porkbun.com/api/json/v3";
 
 fn api_key() -> Result<String> {
-    std::env::var("PORKBUN_API_KEY")
-        .wrap_err("PORKBUN_API_KEY env var not set")
+    std::env::var("PORKBUN_API_KEY").wrap_err("PORKBUN_API_KEY env var not set")
 }
 
 fn secret_key() -> Result<String> {
-    std::env::var("PORKBUN_SECRET_KEY")
-        .wrap_err("PORKBUN_SECRET_KEY env var not set")
+    std::env::var("PORKBUN_SECRET_KEY").wrap_err("PORKBUN_SECRET_KEY env var not set")
 }
 
 pub async fn ping(client: &Client) -> Result<IpAddr> {
@@ -105,28 +103,34 @@ pub async fn ping(client: &Client) -> Result<IpAddr> {
         .send()
         .await?;
 
-    let value = validate_json(resp.json::<Value>().await?)?;
+    let value = validate_response(resp).await?;
     let ip = value["yourIp"]
         .as_str()
         .ok_or_else(|| eyre!("no yourIp field on ping response"))?;
     Ok(ip.parse()?)
 }
 
-async fn retrieve_by_name_type(client: &Client, params: &Params) -> Result<Vec<Record>> {
-    let domain = &params.domain;
-    let name = &params.name;
-    let record_type = params.record_type;
+pub async fn retrieve_by_name_type(
+    client: &Client,
+    domain: &str,
+    name: &str,
+    record_type: RecordType,
+) -> Result<Vec<Record>> {
     let url = format!("{PORKBUN_API}/dns/retrieveByNameType/{domain}/{record_type}/{name}");
     tracing::debug!("retrieve_by_name_type url: {url}");
-    let resp = client
+    let body = json!({
+        "apikey": api_key()?,
+        "secretapikey": secret_key()?,
+    });
+    let (c, req) = client
         .post(&url)
-        .json(&json!({
-            "apikey": api_key()?,
-            "secretapikey": secret_key()?,
-        }))
-        .send()
-        .await?;
-    let value = validate_json(resp.json::<Value>().await?)?;
+        .json(&body)
+        .header("User-Agent", "pbddns")
+        .header("Accept", "*/*")
+        .build_split();
+    let resp = c.execute(req?).await?;
+
+    let value = validate_response(resp).await?;
     let records: Vec<Record> = serde_json::from_value(value["records"].clone())?;
     let records = records
         .into_iter()
@@ -164,7 +168,7 @@ pub async fn create(client: &Client, params: &Params) -> Result<String> {
     });
     tracing::debug!("create body: {:#?}", body);
     let resp = client.post(url).json(&body).send().await?;
-    let value = validate_json(resp.json::<Value>().await?)?;
+    let value = validate_response(resp).await?;
     let id = value["id"].clone();
     if let Some(id) = id.as_str() {
         return Ok(id.to_string());
@@ -179,7 +183,7 @@ async fn edit(client: &Client, record: Record) -> Result<()> {
     let domain = record
         .domain
         .as_ref()
-        .ok_or(eyre!("record has no domain"))?;
+        .ok_or_else(|| eyre!("record has no domain"))?;
     let url = format!("{PORKBUN_API}/dns/edit/{domain}/{id}", id = record.id);
     tracing::debug!("edit url: {url}");
     let body = json!({
@@ -194,12 +198,13 @@ async fn edit(client: &Client, record: Record) -> Result<()> {
     tracing::debug!("edit body: {:#?}", body);
 
     let resp = client.post(url).json(&body).send().await?;
-    validate_json(resp.json::<Value>().await?)?;
+    validate_response(resp).await?;
     Ok(())
 }
 
 pub async fn create_or_edit(client: &Client, params: &Params) -> Result<(String, bool)> {
-    let mut records = retrieve_by_name_type(client, params).await?;
+    let mut records =
+        retrieve_by_name_type(client, &params.domain, &params.name, params.record_type).await?;
     if records.is_empty() {
         Ok((create(client, params).await?, true))
     } else {
@@ -213,12 +218,21 @@ pub async fn create_or_edit(client: &Client, params: &Params) -> Result<(String,
     }
 }
 
-fn validate_json(v: Value) -> Result<Value> {
-    if v["status"] != "SUCCESS" {
-        let message = v["message"].as_str().unwrap_or_default();
-        tracing::debug!("porkbun retreive failed: {:?}", v);
-        return Err(eyre!("porkbun retreive failed: {message}"));
-    }
+async fn validate_response(resp: reqwest::Response) -> Result<Value> {
+    let url = resp.url().clone();
+    let headers = resp.headers().clone();
+    let body = resp.bytes().await?;
 
-    Ok(v)
+    match serde_json::from_slice::<Value>(&body) {
+        Ok(v) if v["status"] == "SUCCESS" => Ok(v),
+        Ok(v) => {
+            let message = v["message"].as_str().unwrap_or_default();
+            tracing::debug!("porkbun retreive failed: {:?}", v);
+            Err(eyre!("porkbun retreive failed: {message}"))
+        }
+        Err(e) => Err(eyre!(
+            "failed to parse porkbun response for {url}: {e}:\n{headers:#?}\n{body}",
+            body = String::from_utf8_lossy(&body)
+        )),
+    }
 }

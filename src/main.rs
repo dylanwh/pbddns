@@ -19,15 +19,12 @@ use axum::{
 use clap::Parser;
 use config::Config;
 use eyre::Result;
-use futures::future::join_all;
-use porkbun::RecordType::A;
+use porkbun::{retrieve_by_name_type, RecordType::A};
 use reqwest::Client;
 use std::{collections::HashMap, io::IsTerminal, net::IpAddr, sync::Arc, time::Duration};
 use tokio::{net::TcpListener, signal, sync::Mutex, time};
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
-use tracing_subscriber::{
-    filter, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt, Layer,
-};
+use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
 
 type DNSCache = HashMap<String, Vec<IpAddr>>;
 
@@ -66,7 +63,6 @@ async fn update_loop(
 }
 
 async fn update_once(config: Arc<Config>, client: Client, dns_cache: Option<Arc<Mutex<DNSCache>>>) {
-    let mut handles = vec![];
     for (name, ips) in config.domains() {
         if let Some(ref dns_cache) = dns_cache {
             let mut dns_cache = dns_cache.lock().await;
@@ -75,20 +71,14 @@ async fn update_once(config: Arc<Config>, client: Client, dns_cache: Option<Arc<
                 tracing::info!("{name} has not changed ({ips:?})");
                 continue;
             }
-            *cached_ips = ips.clone();
+            cached_ips.clone_from(&ips);
             drop(dns_cache);
         }
         for ip in ips {
-            let j = tokio::spawn(update_dns(
-                client.clone(),
-                config.domain.clone(),
-                name.clone(),
-                ip,
-            ));
-            handles.push(j);
+            update_dns(client.clone(), config.domain.clone(), name.clone(), ip).await;
+            tokio::time::sleep(Duration::from_secs(1)).await;
         }
     }
-    join_all(handles).await;
 }
 
 async fn update_dns(client: Client, domain: String, name: String, ip: IpAddr) {
@@ -116,18 +106,28 @@ async fn update_dns(client: Client, domain: String, name: String, ip: IpAddr) {
     }
 }
 
+static APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
+
+fn new_client() -> Result<Client> {
+    Ok(reqwest::Client::builder()
+        .user_agent(format!(
+            "{APP_USER_AGENT} (https://github.com/dylanwh/pbddns)"
+        ))
+        .build()?)
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
+    let env_filter = tracing_subscriber::EnvFilter::builder()
+        .with_default_directive("pbddns=info".parse()?)
+        .from_env()?;
     tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::fmt::layer()
-                .with_ansi(std::io::stdout().is_terminal())
-                .with_filter(filter::LevelFilter::INFO),
-        )
+        .with(env_filter)
+        .with(tracing_subscriber::fmt::layer().with_ansi(std::io::stdout().is_terminal()))
         .init();
     let config = Arc::new(Config::parse());
-    let client = reqwest::Client::new();
+    let client = new_client()?;
     let state = AppState::new(config.clone(), client.clone());
 
     if config.ping {
@@ -138,6 +138,15 @@ async fn main() -> Result<()> {
 
     if config.once {
         update_once(config.clone(), client.clone(), None).await;
+        return Ok(());
+    }
+
+    if let Some(ref name) = config.test {
+        let records = retrieve_by_name_type(&client, &config.domain, name, A).await?;
+        println!("{records:#?}");
+
+        let records = retrieve_by_name_type(&client, &config.domain, name, A).await?;
+        println!("{records:#?}");
         return Ok(());
     }
 
