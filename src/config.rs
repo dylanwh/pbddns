@@ -11,7 +11,7 @@ use interfaces::{Address, Interface};
 #[command(author, version, about)]
 pub struct Config {
     /// the address to listen on for the status server
-    #[arg(short, long, default_value = "0.0.0.0:3000")]
+    #[arg(short, long, default_value = "0.0.0.0:3053")]
     pub listen: SocketAddr,
 
     /// The domain to update on porkbun

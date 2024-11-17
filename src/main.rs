@@ -18,7 +18,7 @@ use axum::{
 };
 use clap::Parser;
 use config::Config;
-use eyre::Result;
+use eyre::{Context, Result};
 use porkbun::{retrieve_by_name_type, RecordType::A};
 use reqwest::Client;
 use std::{collections::HashMap, io::IsTerminal, net::IpAddr, sync::Arc, time::Duration};
@@ -151,17 +151,19 @@ async fn main() -> Result<()> {
     }
 
     if let Some(write_pid) = &config.write_pid {
-        std::fs::write(write_pid, std::process::id().to_string())?;
+        std::fs::write(write_pid, std::process::id().to_string())
+            .wrap_err("failed to write pid file")?;
     }
     let shutdown = CancellationToken::new();
     let tracker = TaskTracker::new();
 
-    tracker.spawn(update_loop(
-        shutdown.clone(),
-        config.clone(),
-        client,
-        state.dns_cache.clone(),
-    ));
+    let update_shutdown = shutdown.clone();
+    let update_config = config.clone();
+    let update_client = client.clone();
+    let dns_cache = state.dns_cache.clone();
+    tracker.spawn(async move {
+        update_loop(update_shutdown, update_config, update_client, dns_cache).await;
+    });
 
     let router = Router::new()
         .route("/", get(status))
